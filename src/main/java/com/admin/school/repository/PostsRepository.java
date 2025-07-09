@@ -1,0 +1,105 @@
+package com.admin.school.repository;
+
+import com.admin.school.models.Post;
+import com.admin.school.models.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.NativeQuery;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.UUID;
+
+@Repository
+public interface PostsRepository extends JpaRepository<Post, UUID> {
+    List<Post> findAllByUser(User user);
+
+    @Query("SELECT p, l.liked FROM Post p " +
+            "LEFT JOIN PostLike l ON l.post.id = p.id AND l.user.id = :userId " +
+            "WHERE p.user.id = :userId")
+    List<Object[]> findPostsWithLikeStatusByUserId(@Param("userId") UUID  userId);
+
+    @Query("""
+        SELECT DISTINCT p FROM Post p 
+        LEFT JOIN p.likes pl 
+        WHERE p.user.id = :userId
+           OR p.user.id IN (SELECT u.id FROM User u JOIN u.connections c WHERE c.id = :userId)
+           OR p.organization.id IN (SELECT o.id FROM Organization o JOIN o.followers f WHERE f.id = :userId)
+           OR p.id IN (
+               SELECT DISTINCT pl2.post.id 
+               FROM PostLike pl2 
+               WHERE pl2.user.id IN (SELECT u.id FROM User u JOIN u.connections c WHERE c.id = :userId)
+               OR pl2.organization.id IN (SELECT o.id FROM Organization o JOIN o.followers f WHERE f.id = :userId)
+           )
+        ORDER BY p.createdAt DESC
+    """)
+    List<Post> getFeed(@Param("userId") UUID userId);
+
+    @NativeQuery("""
+        SELECT DISTINCT p.*,
+               CASE WHEN pl.user_id = :userId THEN true ELSE false END as is_liked,
+               CASE WHEN p.user_id = :userId THEN 3 
+                    WHEN p.user_id IN (SELECT f.connections_id FROM user_connections f WHERE f.user_id = :userId) THEN 2
+                    WHEN p.organization_id IN (SELECT pf.organization_id FROM organization_followers pf WHERE pf.followers_id = :userId) THEN 1
+                    ELSE 0 END as relevance_score,
+               (SELECT COUNT(*) FROM post_like WHERE post_id = p.id) as likes_count,
+               (SELECT COUNT(*) FROM comment WHERE post_id = p.id) as comments_count
+        FROM Post p 
+        LEFT JOIN post_like pl ON p.id = pl.post_id AND pl.user_id = :userId
+        WHERE p.user_id = :userId
+           OR p.user_id IN (
+               SELECT f.connections_id FROM user_connections f WHERE f.user_id = :userId
+           )
+           OR p.organization_id IN (
+               SELECT pf.organization_id FROM organization_followers pf WHERE pf.followers_id = :userId
+           )
+           OR p.user_id IN (
+               SELECT DISTINCT uc.connections_id 
+               FROM user_connections uc 
+               WHERE uc.user_id IN (
+                   SELECT f.connections_id FROM user_connections f WHERE f.user_id = :userId
+               )
+           )
+        ORDER BY relevance_score DESC, p.created_at DESC
+        LIMIT :limit OFFSET :offset
+    """)
+    List<Object[]> getFeedWithPagination(@Param("userId") UUID userId, @Param("limit") int limit, @Param("offset") int offset);
+
+    @NativeQuery("""
+        SELECT DISTINCT p.*, 
+               CASE WHEN pl.user_id = :userId THEN true ELSE false END as is_liked,
+               CASE WHEN p.user_id = :userId THEN 3 
+                    WHEN p.user_id IN (SELECT f.connections_id FROM user_connections f WHERE f.user_id = :userId) THEN 2
+                    WHEN p.organization_id IN (SELECT pf.organization_id FROM organization_followers pf WHERE pf.followers_id = :userId) THEN 1
+                    ELSE 0 END as relevance_score
+        FROM Post p 
+        LEFT JOIN post_like pl ON p.id = pl.post_id AND pl.user_id = :userId
+        WHERE (p.user_id = :userId
+           OR p.user_id IN (
+               SELECT f.connections_id FROM user_connections f WHERE f.user_id = :userId
+           )
+           OR p.organization_id IN (
+               SELECT pf.organization_id FROM organization_followers pf WHERE pf.followers_id = :userId
+           )
+           OR p.user_id IN (
+               SELECT DISTINCT uc.connections_id 
+               FROM user_connections uc 
+               WHERE uc.user_id IN (
+                   SELECT f.connections_id FROM user_connections f WHERE f.user_id = :userId
+               )
+           ))
+           AND p.created_at >= :sinceDate
+        ORDER BY relevance_score DESC, p.created_at DESC
+        LIMIT 50
+    """)
+    List<Post> getFeedSinceDate(@Param("userId") UUID userId, @Param("sinceDate") java.sql.Timestamp sinceDate);
+}
+
+//signup
+//photoupload
+//login -- phNo, Gmail
+//likes
+
+
+//sharing
