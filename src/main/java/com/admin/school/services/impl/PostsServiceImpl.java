@@ -8,6 +8,7 @@ import com.admin.school.repository.LikeRepository;
 import com.admin.school.repository.OrganizationRepository;
 import com.admin.school.repository.PostsRepository;
 import com.admin.school.repository.UserRepository;
+import com.admin.school.services.NotificationService;
 import com.admin.school.services.PostsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,12 +28,14 @@ public class PostsServiceImpl implements PostsService {
     private final UserRepository userRepository;
     private final OrganizationRepository organizationRepository;
     private final LikeRepository likeRepository;
+    private final NotificationService notificationService;
 
-    public PostsServiceImpl(PostsRepository postsRepository, UserRepository userRepository, OrganizationRepository organizationRepository, LikeRepository likeRepository) {
+    public PostsServiceImpl(PostsRepository postsRepository, UserRepository userRepository, OrganizationRepository organizationRepository, LikeRepository likeRepository, NotificationService notificationService) {
         this.postsRepository = postsRepository;
         this.userRepository = userRepository;
         this.organizationRepository = organizationRepository;
         this.likeRepository = likeRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -81,13 +84,22 @@ public class PostsServiceImpl implements PostsService {
 
         if (existingLike != null) {
             existingLike.setLiked(!existingLike.isLiked());
+            if (!post.getUser().getId().equals(user.getId())) {
+                if (existingLike.isLiked())
+                    notificationService.sendPostLikeNotification(post, user);
+                else
+                    notificationService.deletePostLikeNotification(post, user);
+            }
             likeRepository.save(existingLike);
         } else {
             PostLike newLike = new PostLike();
             newLike.setUser(user);
             newLike.setPost(post);
             newLike.setLiked(true);
-            likeRepository.save(newLike);
+            if (!post.getUser().getId().equals(user.getId())) {
+                notificationService.sendPostLikeNotification(post, user);
+                likeRepository.save(newLike);
+            }
         }
     }
 

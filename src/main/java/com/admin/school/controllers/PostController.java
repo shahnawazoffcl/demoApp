@@ -9,6 +9,7 @@ import com.admin.school.models.Post;
 import com.admin.school.services.AuthService;
 import com.admin.school.services.FileService;
 import com.admin.school.services.PostsService;
+import com.admin.school.services.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,11 +24,13 @@ public class PostController {
     private final PostsService postsService;
     private final AuthService authService;
     private final FileService fileService;
+    private final UserService userService;
 
-    public PostController(PostsService postsService, AuthService authService, FileService fileService) {
+    public PostController(PostsService postsService, AuthService authService, FileService fileService, UserService userService) {
         this.postsService = postsService;
         this.authService = authService;
         this.fileService = fileService;
+        this.userService = userService;
     }
 
 
@@ -133,4 +136,17 @@ public class PostController {
         return ResponseEntity.ok("Video endpoint is working");
     }
 
+    @GetMapping("/{postId}")
+    public ResponseEntity<PostResponseDTO> getPostById(@RequestHeader("token") String token, @PathVariable("postId") String postId) {
+        try {
+            String userId = authService.getUserIdFromToken(token);
+            authService.validateUser(token, userId);
+            
+            Post post = postsService.getPost(postId);
+            PostResponseDTO postResponseDTO = PostControllerUtils.mapPostToPostResponseDTO(post, userId, userService);
+            return ResponseEntity.ok(postResponseDTO);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

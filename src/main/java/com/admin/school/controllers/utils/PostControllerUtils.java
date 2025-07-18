@@ -70,6 +70,15 @@ public class PostControllerUtils {
             postResponseDTO.setCanConnect(!isConnected && !post.getUser().getId().toString().equals(currentUserId));
         }
         
+        // Set liked status for current user
+        if (currentUserId != null && post.getLikes() != null) {
+            boolean isLiked = post.getLikes().stream()
+                .anyMatch(like -> like.getUser() != null && 
+                         like.getUser().getId().toString().equals(currentUserId) && 
+                         like.isLiked());
+            postResponseDTO.setLiked(isLiked);
+        }
+        
         return postResponseDTO;
     }
 
