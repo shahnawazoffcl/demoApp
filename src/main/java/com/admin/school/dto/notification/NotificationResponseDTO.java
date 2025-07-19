@@ -3,6 +3,8 @@ package com.admin.school.dto.notification;
 
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.Date;
 import java.util.UUID;
 
 @Setter
@@ -16,4 +18,5 @@ public class NotificationResponseDTO {
     private String recipientName;
     private String senderName;
     private String postId; // Add post ID for navigation
+    private Date createdAt;
 }

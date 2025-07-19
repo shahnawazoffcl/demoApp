@@ -18,10 +18,13 @@ public class Post extends BaseModel{
     private String content;
     private String mediaUrl;
     private String audioUrl;
-    @OneToMany
+    
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Comment> comments = new ArrayList<>();
+    
     @ManyToOne
     private User user;
+    
     @ManyToOne
     private Organization organization;
 

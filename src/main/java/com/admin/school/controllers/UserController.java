@@ -5,9 +5,11 @@ import com.admin.school.controllers.utils.UserControllerUtils;
 import com.admin.school.dto.post.PostResponseDTO;
 import com.admin.school.dto.post.FeedPostDTO;
 import com.admin.school.dto.user.UserFollowerDTO;
+import com.admin.school.models.Notification;
 import com.admin.school.models.Post;
 import com.admin.school.models.User;
 import com.admin.school.services.AuthService;
+import com.admin.school.services.NotificationService;
 import com.admin.school.services.PostsService;
 import com.admin.school.services.UserService;
 import org.springframework.http.ResponseEntity;
@@ -23,11 +25,13 @@ public class UserController {
     private final PostsService postsService;
     private final AuthService authService;
     private final UserService userService;
+    private final NotificationService notificationService;
 
-    public UserController(PostsService postsService, AuthService authService, UserService userService) {
+    public UserController(PostsService postsService, AuthService authService, UserService userService, NotificationService notificationService) {
         this.postsService = postsService;
         this.authService = authService;
         this.userService = userService;
+        this.notificationService = notificationService;
     }
 
     @GetMapping("/feed/{userId}")
@@ -87,6 +91,21 @@ public class UserController {
         authService.validateUser(token,authorId);
         userService.connectWithUser(authorId, userId);
         return ResponseEntity.ok("Users connected successfully");
+    }
+
+    @PostMapping("accept-connection/{notificationId}")
+    public ResponseEntity<String> acceptConnection(@RequestHeader("token") String token, @PathVariable("notificationId") String notificationId) {
+        Notification notification = notificationService.getNotificationById(notificationId);
+        authService.validateUser(token, notification.getRecipient().getId().toString());
+        String authorId = notification.getRecipient().getId().toString();
+        String userId = notification.getSender().getId().toString();
+        if (!userService.areUsersConnected(authorId, userId)) {
+            userService.acceptConnectionRequest(authorId, userId);
+            notificationService.deleteNotification(notificationId);
+            return ResponseEntity.ok("Connection accepted successfully");
+        } else {
+            return ResponseEntity.badRequest().body("Users are already connected");
+        }
     }
 
     @PostMapping("disconnect/{authorId}/{userId}")

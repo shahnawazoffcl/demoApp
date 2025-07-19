@@ -17,6 +17,7 @@ public class NotificationControllerUtils {
             notificationResponseDTO.setReadStatus(notification.isReadStatus());
             notificationResponseDTO.setRecipientName(notification.getRecipient().getUsername());
             notificationResponseDTO.setSenderName(notification.getSender().getUsername());
+            notificationResponseDTO.setCreatedAt(notification.getCreatedAt());
             // Set post ID if the notification has a related post
             if (notification.getPost() != null) {
                 notificationResponseDTO.setPostId(notification.getPost().getId().toString());

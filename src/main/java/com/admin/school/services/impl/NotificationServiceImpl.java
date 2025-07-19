@@ -1,9 +1,7 @@
 package com.admin.school.services.impl;
 
 import com.admin.school.dto.notification.NotificationResponseDTO;
-import com.admin.school.models.Notification;
-import com.admin.school.models.Post;
-import com.admin.school.models.User;
+import com.admin.school.models.*;
 import com.admin.school.repository.NotificationRepository;
 import com.admin.school.repository.UserRepository;
 import com.admin.school.services.NotificationService;
@@ -73,5 +71,41 @@ public class NotificationServiceImpl implements NotificationService {
             }
             notificationRepository.saveAll(notifications);
         }
+    }
+
+    @Override
+    public void sendConnectionRequestNotification(User user1, User user2) {
+        Notification notification = new Notification();
+        notification.setTitle("Connection Request");
+        notification.setContent(user1.getUsername() + Constants.ConnectionsRequest);
+        notification.setRecipient(user2);
+        notification.setSender(user1);
+        notification.setType(Constants.NotificationTypeConnectionRequest);
+        notificationRepository.save(notification);
+    }
+
+    @Override
+    public Notification getNotificationById(String notificationId) {
+        Optional<Notification> optionalNotification = notificationRepository.findById(UUID.fromString(notificationId));
+        return optionalNotification.orElse(null);
+    }
+
+    @Override
+    public void deleteNotification(String notificationId) {
+        Optional<Notification> optionalNotification = notificationRepository.findById(UUID.fromString(notificationId));
+        optionalNotification.ifPresent(notificationRepository::delete);
+    }
+
+    @Override
+    public void sendCommentNotification(Comment savedComment, BaseModel baseModel) {
+        Notification notification = new Notification();
+        notification.setTitle(savedComment.getAuthor().getUsername() + Constants.CommentedOnYourPost);
+        notification.setContent(savedComment.getAuthor().getUsername()+": "+savedComment.getContent());
+        notification.setRecipient(savedComment.getPost().getUser());
+        notification.setSender(savedComment.getAuthor());
+        notification.setPost(savedComment.getPost());
+        notification.setComment(savedComment);
+        notification.setType(Constants.NotificationTypeComment);
+        notificationRepository.save(notification);
     }
 }

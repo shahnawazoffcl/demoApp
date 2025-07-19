@@ -11,6 +11,7 @@ import com.admin.school.repository.LikeRepository;
 import com.admin.school.repository.OrganizationRepository;
 import com.admin.school.repository.PostsRepository;
 import com.admin.school.repository.UserRepository;
+import com.admin.school.services.NotificationService;
 import com.admin.school.services.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,12 +30,14 @@ public class UserServiceImpl implements UserService {
     private final OrganizationRepository organizationRepository;
     private final PostsRepository postsRepository;
     private final LikeRepository likeRepository;
+    private final NotificationService notificationService;
 
-    public UserServiceImpl(UserRepository userRepository, OrganizationRepository organizationRepository, PostsRepository postsRepository, LikeRepository likeRepository) {
+    public UserServiceImpl(UserRepository userRepository, OrganizationRepository organizationRepository, PostsRepository postsRepository, LikeRepository likeRepository, NotificationService notificationService) {
         this.userRepository = userRepository;
         this.organizationRepository = organizationRepository;
         this.postsRepository = postsRepository;
         this.likeRepository = likeRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -47,10 +50,8 @@ public class UserServiceImpl implements UserService {
             log.error("Users with id: {} and {} are already connected", userId, authorId);
             return;
         }
-        user1.getConnections().add(user2);
-        user2.getConnections().add(user1);
-        userRepository.save(user1);
-        userRepository.save(user2);
+
+        notificationService.sendConnectionRequestNotification(user1, user2);
     }
 
     @Override
@@ -245,5 +246,17 @@ public class UserServiceImpl implements UserService {
             log.error("Error checking user connection status", e);
             return false;
         }
+    }
+
+    @Override
+    public void acceptConnectionRequest(String authorId, String userId) {
+    log.info("Accepting connection request from user {} to user {}", userId, authorId);
+        User user1 = userRepository.findById(UUID.fromString(authorId)).orElseThrow(() -> new UserNotFoundException("User not found"));
+        User user2 = userRepository.findById(UUID.fromString(userId)).orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        user1.getConnections().add(user2);
+        user2.getConnections().add(user1);
+        userRepository.save(user1);
+        userRepository.save(user2);
     }
 }

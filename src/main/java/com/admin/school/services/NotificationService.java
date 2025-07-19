@@ -1,8 +1,6 @@
 package com.admin.school.services;
 
-import com.admin.school.models.Notification;
-import com.admin.school.models.Post;
-import com.admin.school.models.User;
+import com.admin.school.models.*;
 
 import java.util.List;
 
@@ -16,4 +14,12 @@ public interface NotificationService {
     void markNotificationAsRead(String notificationId);
     
     void markAllNotificationsAsRead(String userId);
+
+    void sendConnectionRequestNotification(User user1, User user2);
+
+    Notification getNotificationById(String notificationId);
+
+    void deleteNotification(String notificationId);
+
+    void sendCommentNotification(Comment savedComment, BaseModel baseModel);
 }

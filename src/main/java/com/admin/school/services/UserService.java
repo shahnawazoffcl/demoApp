@@ -27,4 +27,6 @@ public interface UserService {
     List<FeedPostDTO> getFeedSinceDate(String userId, Date sinceDate);
     
     boolean areUsersConnected(String user1Id, String user2Id);
+
+    void acceptConnectionRequest(String authorId, String userId);
 }

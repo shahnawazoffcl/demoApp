@@ -1,9 +1,8 @@
 package com.admin.school.dto.user;
 
-
 import lombok.Getter;
 import lombok.Setter;
-
+import java.util.Date;
 import java.util.UUID;
 
 @Getter
@@ -15,7 +14,7 @@ public class UserResponseDTO {
     private String username;
     private String profilePictureUrl;
     private String role;
-    private String createdAt;
+    private Date createdAt;
     private Integer connectionsCount;
     private String profileComplete;
 
