@@ -16,6 +16,6 @@ public class UserResponseDTO {
     private String role;
     private Date createdAt;
     private Integer connectionsCount;
-    private String profileComplete;
+    private String profileStatus;
 
 }

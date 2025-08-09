@@ -15,6 +15,42 @@ import java.util.UUID;
 public interface PostsRepository extends JpaRepository<Post, UUID> {
     List<Post> findAllByUser(User user);
 
+    List<Post> findByOrganizationOrderByCreatedAtDesc(com.admin.school.models.Organization organization);
+
+    @Query("""
+        SELECT p FROM Post p 
+        WHERE p.user.id IN (
+            SELECT usr.user.id FROM UserSchoolRelationship usr 
+            WHERE usr.school.id = :organizationId AND usr.status = 'ACTIVE'
+        )
+        ORDER BY p.createdAt DESC
+    """)
+    List<Post> findPostsByOrganizationConnections(@Param("organizationId") UUID organizationId);
+
+    @Query("""
+        SELECT p FROM Post p 
+        WHERE p.organization.id IN (
+            SELECT o.id FROM Organization o 
+            JOIN o.followers f 
+            WHERE f.id = :organizationId
+        )
+        ORDER BY p.createdAt DESC
+    """)
+    List<Post> findPostsFromFollowedOrganizations(@Param("organizationId") UUID organizationId);
+
+    @Query("""
+        SELECT p FROM Post p 
+        WHERE p.id IN (
+            SELECT pl.post.id FROM PostLike pl 
+            WHERE pl.user.id IN (
+                SELECT usr.user.id FROM UserSchoolRelationship usr 
+                WHERE usr.school.id = :organizationId AND usr.status = 'ACTIVE'
+            )
+        )
+        ORDER BY p.createdAt DESC
+    """)
+    List<Post> findPostsFromOrganizationNetwork(@Param("organizationId") UUID organizationId);
+
     @Query("SELECT p, l.liked FROM Post p " +
             "LEFT JOIN PostLike l ON l.post.id = p.id AND l.user.id = :userId " +
             "WHERE p.user.id = :userId")

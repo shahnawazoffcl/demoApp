@@ -3,12 +3,14 @@ package com.admin.school.controllers;
 
 import com.admin.school.controllers.utils.AuthControllerUtils;
 import com.admin.school.controllers.utils.GoogleTokenUtils;
+import com.admin.school.controllers.utils.OrganizationControllerUtils;
 import com.admin.school.dto.SessionResponseDTO;
 import com.admin.school.dto.user.UserRequestDTO;
 import com.admin.school.dto.user.UserRequestGoogleDTO;
 import com.admin.school.models.OrgSession;
 import com.admin.school.models.Session;
 import com.admin.school.services.AuthService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,16 +23,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/auth")
 public class AuthController {
 
-    private final AuthService authService;
+    @Autowired
+    private AuthService authService;
 
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }
 
     @PostMapping("/login")
     public ResponseEntity<SessionResponseDTO> login(@RequestBody UserRequestDTO userRequestDTO) {
         Session session = authService.login(userRequestDTO.getEmail(), userRequestDTO.getPassword());
         SessionResponseDTO sessionResponseDTO = AuthControllerUtils.getSessionResponseDTO(session.getUser(), session);
+        sessionResponseDTO.setEntityType("USER");
+        
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.add("Authorization", session.getToken());
         responseHeaders.add("ExpiryAt", session.getExpiryAt().toString());
@@ -56,21 +58,34 @@ public class AuthController {
 
     @PostMapping("/signup")
     public ResponseEntity<String> signup(@RequestBody UserRequestDTO userRequestDTO) {
-        authService.signup(userRequestDTO.getEmail(), userRequestDTO.getPassword(), userRequestDTO.getName());
+        if(userRequestDTO.getRole().equals("USER"))
+            authService.signup(userRequestDTO.getEmail(), userRequestDTO.getPassword(), userRequestDTO.getName());
+        else if(userRequestDTO.getRole().equals("ORGANIZATION"))
+            authService.signupOrganization(userRequestDTO.getEmail(), userRequestDTO.getPassword());
+        else
+            return ResponseEntity.badRequest().body("Invalid role specified");
         return ResponseEntity.ok("User created successfully");
     }
 
 
     @PostMapping("/loginOrganization")
-    public ResponseEntity<OrgSession> loginOrganization(@RequestBody UserRequestDTO userRequestDTO) {
+    public ResponseEntity<SessionResponseDTO> loginOrganization(@RequestBody UserRequestDTO userRequestDTO) {
         OrgSession session = authService.loginOrganization(userRequestDTO.getEmail(), userRequestDTO.getPassword());
+        
+        SessionResponseDTO sessionResponseDTO = new SessionResponseDTO();
+        sessionResponseDTO.setToken(session.getToken());
+        sessionResponseDTO.setOrganization(OrganizationControllerUtils.mapOrganizationToOrganizationResponseDTO(session.getOrganization()));
+        sessionResponseDTO.setEntityType("ORGANIZATION");
+        sessionResponseDTO.setExpiryAt(session.getExpiryAt());
+        sessionResponseDTO.setRegistered(true); // Organizations are always registered
+        
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.add("Authorization", session.getToken());
         responseHeaders.add("ExpiryAt", session.getExpiryAt().toString());
         responseHeaders.add("Access-Control-Expose-Headers", "Authorization");
         responseHeaders.add("Access-Control-Expose-Headers", "ExpiryAt");
 
-        return ResponseEntity.ok().headers(responseHeaders).body(session);
+        return ResponseEntity.ok().headers(responseHeaders).body(sessionResponseDTO);
     }
 
     @PostMapping("/signupOrganization")

@@ -18,7 +18,7 @@ public class AuthControllerUtils {
         userResponseDTO.setCreatedAt(user.getCreatedAt()==null? new Date() :user.getCreatedAt());
         userResponseDTO.setConnectionsCount(user.getConnections()== null ? 0 : user.getConnections().size());
         userResponseDTO.setId(user.getId());
-        userResponseDTO.setProfileComplete(user.getProfileComplete());
+        userResponseDTO.setProfileStatus(user.getProfileStatus());
 
         return userResponseDTO;
     }

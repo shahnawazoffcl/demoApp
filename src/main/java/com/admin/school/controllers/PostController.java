@@ -112,7 +112,7 @@ public class PostController {
             post = postsService.createPost(post,"USER" , userId);
         }
         else{
-            authService.validateUser(token, organizationId);
+            authService.validateOrg(token, organizationId);
             post = postsService.createPost(post, "ORGANIZATION" , organizationId);
         }
         PostResponseDTO postResponseDTO = PostControllerUtils.mapPostToPostResponseDTO(post);
@@ -129,6 +129,20 @@ public class PostController {
             postResponseDTOList.add(postResponseDTO);
         }
         return ResponseEntity.ok(postResponseDTOList);
+    }
+
+    @DeleteMapping("{userId}/posts")
+    public ResponseEntity<String> deletePost(
+            @RequestHeader("token") String token,
+            @PathVariable("userId") String userId,
+            @RequestParam("postId") String postId) {
+        try {
+            authService.validateUser(token, userId);
+            postsService.deletePost(postId,userId);
+            return ResponseEntity.ok("Post deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error deleting post: " + e.getMessage());
+        }
     }
 
     @GetMapping("/test-video")

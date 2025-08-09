@@ -3,6 +3,7 @@ package com.admin.school.services;
 import com.admin.school.models.Post;
 import com.admin.school.models.User;
 import com.admin.school.dto.post.FeedPostDTO;
+import com.admin.school.dto.user.CompleteProfileDTO;
 
 import java.util.Date;
 import java.util.List;
@@ -29,4 +30,6 @@ public interface UserService {
     boolean areUsersConnected(String user1Id, String user2Id);
 
     void acceptConnectionRequest(String authorId, String userId);
+    
+    User completeProfile(String userId, CompleteProfileDTO completeProfileDTO);
 }

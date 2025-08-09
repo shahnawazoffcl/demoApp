@@ -1,16 +1,14 @@
 package com.admin.school.dto.user;
 
-
 import lombok.Getter;
 import lombok.Setter;
 
-@Setter
 @Getter
-public class UserRequestDTO {
-
+@Setter
+public class CompleteProfileDTO {
     private String email;
-    private String password;
-    private String name;
+    private String phone;
+    private String address;
+    private String profilePicture;
     private String role;
-
-}
+} 

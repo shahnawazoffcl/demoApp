@@ -176,6 +176,7 @@ public class AuthServiceImpl implements AuthService {
         Organization newOrganization = new Organization();
         newOrganization.setEmail(email);
         newOrganization.setPassword(password);
+        newOrganization.setName(""); // Set empty name so routing redirects to profile completion
         newOrganization = organizationRepository.save(newOrganization);
         return newOrganization;
     }
@@ -192,17 +193,21 @@ public class AuthServiceImpl implements AuthService {
             newUser.setProfilePictureUrl(userRequestDTO.getPicture());
             newUser.setPassword(userRequestDTO.getEmail());
             newUser.setCreatedAt(new Date());
-            newUser.setProfileComplete("N");
 
             newUser = userRepository.save(newUser);
             user = Optional.of(newUser);
 
-            session.setRegistered(newUser.getProfileComplete().equals("Y"));
+            if( newUser.getProfileStatus() == null || newUser.getProfileStatus().isEmpty()) {
+                newUser.setProfileStatus("CREATED");
+                userRepository.save(newUser);
+            }
+
+            session.setRegistered(newUser.getProfileStatus() != null && (newUser.getProfileStatus().equals("COMPLETED") || newUser.getProfileStatus().equals("VERIFIED")));
             session.setUser(newUser);
 //            throw new UserNotFoundException("User not found with email: " + userRequestDTO.getEmail());
         }
         else{
-            session.setRegistered(user.get().getProfileComplete().equals("Y"));
+            session.setRegistered(user.get().getProfileStatus().equals("COMPLETED") || user.get().getProfileStatus().equals("VERIFIED"));
             session.setUser(user.get());
         }
         Map<String, Object> jsonForJWT = new HashMap<>();

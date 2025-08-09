@@ -18,6 +18,9 @@ public class User extends BaseModel {
     private String email;
     private String profilePictureUrl;
     private String role;
+    private String phone;
+    private String address;
+    
     @ManyToMany
     private List<User> connections = new ArrayList<>();
 
@@ -27,6 +30,10 @@ public class User extends BaseModel {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<PostLike> likes;
 
-    private String profileComplete;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<UserSchoolRelationship> schoolRelationships = new ArrayList<>();
+
+    @Column(columnDefinition = "varchar(15) default 'CREATED'", insertable = false)
+    private String profileStatus;
 
 }

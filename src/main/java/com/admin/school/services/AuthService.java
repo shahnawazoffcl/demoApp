@@ -11,6 +11,7 @@ public interface AuthService {
     Session login(String email, String password);
     User signup(String email, String password, String name);
     void validateUser(String token, String userId);
+    void validateOrg(String token, String orgId);
 
     OrgSession loginOrganization(String email, String password);
 

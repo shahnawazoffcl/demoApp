@@ -5,6 +5,8 @@ import com.admin.school.controllers.utils.UserControllerUtils;
 import com.admin.school.dto.post.PostResponseDTO;
 import com.admin.school.dto.post.FeedPostDTO;
 import com.admin.school.dto.user.UserFollowerDTO;
+import com.admin.school.dto.user.CompleteProfileDTO;
+import com.admin.school.dto.user.UserResponseDTO;
 import com.admin.school.models.Notification;
 import com.admin.school.models.Post;
 import com.admin.school.models.User;
@@ -32,6 +34,20 @@ public class UserController {
         this.authService = authService;
         this.userService = userService;
         this.notificationService = notificationService;
+    }
+
+    @PostMapping("/complete-profile/{userId}")
+    public ResponseEntity<UserResponseDTO> completeProfile(@RequestHeader("token") String token, @PathVariable("userId") String userId, @RequestBody CompleteProfileDTO completeProfileDTO) {
+        try {
+            authService.validateUser(token, userId);
+            
+            User updatedUser = userService.completeProfile(userId, completeProfileDTO);
+            UserResponseDTO userResponseDTO = UserControllerUtils.mapUserToUserResponse(updatedUser);
+            
+            return ResponseEntity.ok(userResponseDTO);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping("/feed/{userId}")

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import com.admin.school.dto.user.CompleteProfileDTO;
 
 
 @Service
@@ -258,5 +259,39 @@ public class UserServiceImpl implements UserService {
         user2.getConnections().add(user1);
         userRepository.save(user1);
         userRepository.save(user2);
+    }
+
+    @Override
+    public User completeProfile(String userId, CompleteProfileDTO completeProfileDTO) {
+        log.info("Completing profile for user with id: {}", userId);
+        
+        User user = userRepository.findById(UUID.fromString(userId))
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        
+        // Update user profile information
+        if (completeProfileDTO.getPhone() != null) {
+            user.setPhone(completeProfileDTO.getPhone());
+        }
+        
+        if (completeProfileDTO.getAddress() != null) {
+            user.setAddress(completeProfileDTO.getAddress());
+        }
+        
+        if (completeProfileDTO.getProfilePicture() != null) {
+            user.setProfilePictureUrl(completeProfileDTO.getProfilePicture());
+        }
+        
+        if (completeProfileDTO.getRole() != null) {
+            user.setRole(completeProfileDTO.getRole());
+        }
+        
+        // Set profile status to COMPLETED
+        user.setProfileStatus("COMPLETED");
+        
+        // Save the updated user
+        User savedUser = userRepository.save(user);
+        log.info("Profile completed successfully for user with id: {}", userId);
+        
+        return savedUser;
     }
 }
