@@ -17,7 +17,7 @@ public class SecurityConfig  implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")  // Allow all origins
-                .allowedOrigins("http://localhost:3000")  // Replace with your Angular app URL
+                .allowedOrigins("http://localhost:3000", "https://schoolvroom.netlify.app/")  // Replace with your Angular app URL
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH")  // Allowed HTTP methods
                 .allowedHeaders("*")
                 .allowCredentials(true)  // Allow cookies and credentials
