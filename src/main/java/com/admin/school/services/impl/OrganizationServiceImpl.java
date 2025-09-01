@@ -69,4 +69,9 @@ public class OrganizationServiceImpl implements OrganizationService {
         log.info("Successfully saved organization with updated profile");
         return savedOrganization;
     }
+
+    @Override
+    public Organization getOrganizationById(UUID id) {
+        return organizationRepository.findById(id).orElseThrow(() -> new RuntimeException("Organization not found"));
+    }
 } 

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -31,4 +32,12 @@ public class Post extends BaseModel{
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<PostLike> likes = new ArrayList<>();
 
+    // Moderation fields
+    @Enumerated(EnumType.STRING)
+    private PostModerationStatus moderationStatus = PostModerationStatus.VISIBLE;
+
+    private int reportCount = 0;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date lastReportedAt;
 }

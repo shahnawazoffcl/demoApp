@@ -57,6 +57,12 @@ public class PostControllerUtils {
             }
         }
         
+        // Moderation fields
+        if (post.getModerationStatus() != null) {
+            postResponseDTO.setModerationStatus(post.getModerationStatus().name());
+        }
+        postResponseDTO.setReportCount(post.getReportCount());
+
         return postResponseDTO;
     }
 
@@ -122,6 +128,12 @@ public class PostControllerUtils {
             }
         }
         
+        // Moderation fields
+        if (post.getModerationStatus() != null) {
+            postResponseDTO.setModerationStatus(post.getModerationStatus().name());
+        }
+        postResponseDTO.setReportCount(post.getReportCount());
+
         return postResponseDTO;
     }
 
@@ -181,6 +193,10 @@ public class PostControllerUtils {
                 feedPostDTO.setMediaType("image");
             }
         }
+        
+        // Moderation fields
+        feedPostDTO.setMediaType(feedPostDTO.getMediaType());
+        // Add moderation status as media overlay logic in frontend; include status and count if needed later
         
         return feedPostDTO;
     }

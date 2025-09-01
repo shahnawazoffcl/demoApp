@@ -294,4 +294,17 @@ public class UserServiceImpl implements UserService {
         
         return savedUser;
     }
+
+    @Override
+    public User getUserById(String userId) {
+        return userRepository.findById(UUID.fromString(userId)).orElseThrow(() -> new UserNotFoundException("User not found"));
+    }
+
+    @Override
+    public User updateProfilePicture(String userId, String profilePictureUrl) {
+        User user = userRepository.findById(UUID.fromString(userId))
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        user.setProfilePictureUrl(profilePictureUrl);
+        return userRepository.save(user);
+    }
 }

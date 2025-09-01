@@ -27,6 +27,10 @@ public class PostResponseDTO {
     private boolean isConnected; // Whether the current user is connected with the post author
     private boolean canConnect; // Whether the current user can connect with the post author
 
+    // Moderation fields
+    private String moderationStatus; // VISIBLE, WARN, HIDDEN, REMOVED
+    private int reportCount;
+
     // Manual getters and setters for the new fields
     public boolean isConnected() {
         return isConnected;

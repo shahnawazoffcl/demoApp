@@ -61,7 +61,7 @@ public class UserSchoolRelationshipController {
             String userId = authService.getUserIdFromToken(token);
             authService.validateUser(token, userId);
             
-            relationshipService.deleteRelationship(relationshipId);
+            relationshipService.deleteRelationship(relationshipId,userId);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
@@ -88,7 +88,8 @@ public class UserSchoolRelationshipController {
             @RequestHeader("token") String token,
             @PathVariable("userId") String userId) {
         try {
-            authService.validateUser(token, userId);
+            String viewerId = authService.getUserIdFromToken(token);
+            authService.validateUser(token, viewerId);
             
             List<UserSchoolRelationshipDTO> relationships = relationshipService.getUserRelationships(userId);
             return ResponseEntity.ok(relationships);

@@ -17,6 +17,8 @@ public interface PostsRepository extends JpaRepository<Post, UUID> {
 
     List<Post> findByOrganizationOrderByCreatedAtDesc(com.admin.school.models.Organization organization);
 
+    List<Post> findByUserOrderByCreatedAtDesc(User user);
+
     @Query("""
         SELECT p FROM Post p 
         WHERE p.user.id IN (

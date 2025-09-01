@@ -3,6 +3,7 @@ package com.admin.school.services;
 import com.admin.school.dto.post.PostsProcessDTO;
 import com.admin.school.dto.post.FeedPostDTO;
 import com.admin.school.models.Post;
+import com.admin.school.models.ReportReason;
 
 import java.util.List;
 
@@ -18,4 +19,7 @@ public interface PostsService {
     void deletePost(String postId, String userId);
 
     List<FeedPostDTO> getOrganizationFeed(String organizationId);
+
+    // Reporting inappropriate posts
+    void reportPost(String postId, String reporterUserId, ReportReason reason);
 }

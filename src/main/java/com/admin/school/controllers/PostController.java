@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.admin.school.models.ReportReason;
 
 @RestController
 @RequestMapping("/post")
@@ -121,7 +122,8 @@ public class PostController {
 
     @GetMapping("{userId}/posts")
     public ResponseEntity<List<PostResponseDTO>> getAllPostsForUser(@RequestHeader("token") String token, @PathVariable("userId") String userId) {
-        authService.validateUser(token, userId);
+        String viewerId = authService.getUserIdFromToken(token);
+        authService.validateUser(token, viewerId);
         List<PostsProcessDTO> postList = postsService.getAllPostsForUser(userId);
         List<PostResponseDTO> postResponseDTOList = new ArrayList<>();
         for (PostsProcessDTO post : postList) {
@@ -142,6 +144,29 @@ public class PostController {
             return ResponseEntity.ok("Post deleted successfully");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error deleting post: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/{postId}/report")
+    public ResponseEntity<String> reportPost(
+            @RequestHeader("token") String token,
+            @PathVariable("postId") String postId,
+            @RequestParam("reason") String reasonStr) {
+        try {
+            String reporterUserId = authService.getUserIdFromToken(token);
+            authService.validateUser(token, reporterUserId);
+
+            ReportReason reason;
+            try {
+                reason = ReportReason.valueOf(reasonStr.toUpperCase());
+            } catch (Exception e) {
+                reason = ReportReason.OTHER;
+            }
+
+            postsService.reportPost(postId, reporterUserId, reason);
+            return ResponseEntity.ok("Report submitted");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to report: " + e.getMessage());
         }
     }
 

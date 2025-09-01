@@ -32,4 +32,10 @@ public interface UserService {
     void acceptConnectionRequest(String authorId, String userId);
     
     User completeProfile(String userId, CompleteProfileDTO completeProfileDTO);
+
+    // Fetch user by ID
+    User getUserById(String userId);
+
+    // Update profile picture URL
+    User updateProfilePicture(String userId, String profilePictureUrl);
 }

@@ -127,7 +127,12 @@ public class UserSchoolRelationshipServiceImpl implements UserSchoolRelationship
     }
 
     @Override
-    public void deleteRelationship(String relationshipId) {
+    public void deleteRelationship(String relationshipId, String deletedBy) {
+        UserSchoolRelationship userSchoolRelationship = relationshipRepository.findById(UUID.fromString(relationshipId))
+                .orElseThrow(() -> new RuntimeException("Relationship not found"));
+        if(!userSchoolRelationship.getUser().getId().equals(UUID.fromString(deletedBy))){
+            throw new RuntimeException("Unauthorized to delete this relationship");
+        }
         relationshipRepository.deleteById(UUID.fromString(relationshipId));
     }
 

@@ -15,7 +15,7 @@ public interface UserSchoolRelationshipService {
     
     UserSchoolRelationshipDTO updateRelationship(String relationshipId, UserSchoolRelationshipDTO relationshipDTO);
     
-    void deleteRelationship(String relationshipId);
+    void deleteRelationship(String relationshipId, String deletedBy);
     
     UserSchoolRelationshipDTO getRelationshipById(String relationshipId);
     

@@ -8,6 +8,8 @@ import com.admin.school.models.*;
 import com.admin.school.repository.LikeRepository;
 import com.admin.school.repository.OrganizationRepository;
 import com.admin.school.repository.PostsRepository;
+import com.admin.school.repository.PostReportRepository;
+import com.admin.school.repository.PostMentionRepository;
 import com.admin.school.repository.UserRepository;
 import com.admin.school.services.NotificationService;
 import com.admin.school.services.PostsService;
@@ -34,14 +36,18 @@ public class PostsServiceImpl implements PostsService {
     private final LikeRepository likeRepository;
     private final NotificationService notificationService;
     private final UserSchoolRelationshipService userSchoolRelationshipService;
+    private final PostReportRepository postReportRepository;
+    private final PostMentionRepository postMentionRepository;
 
-    public PostsServiceImpl(PostsRepository postsRepository, UserRepository userRepository, OrganizationRepository organizationRepository, LikeRepository likeRepository, NotificationService notificationService, UserSchoolRelationshipService userSchoolRelationshipService) {
+    public PostsServiceImpl(PostsRepository postsRepository, UserRepository userRepository, OrganizationRepository organizationRepository, LikeRepository likeRepository, NotificationService notificationService, UserSchoolRelationshipService userSchoolRelationshipService, PostReportRepository postReportRepository, PostMentionRepository postMentionRepository) {
         this.postsRepository = postsRepository;
         this.userRepository = userRepository;
         this.organizationRepository = organizationRepository;
         this.likeRepository = likeRepository;
         this.notificationService = notificationService;
         this.userSchoolRelationshipService = userSchoolRelationshipService;
+        this.postReportRepository = postReportRepository;
+        this.postMentionRepository = postMentionRepository;
     }
 
     @Override
@@ -63,7 +69,22 @@ public class PostsServiceImpl implements PostsService {
         post.setComments(new ArrayList<>());
         post.setLikes(new ArrayList<>());
         post.setCreatedAt(new Date());
-        return postsRepository.save(post);
+        Post saved = postsRepository.save(post);
+
+        // Parse mentions @OrgName and persist PostMention
+        if (saved.getContent() != null) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("@([A-Za-z0-9_][A-Za-z0-9_ ]{0,50})").matcher(saved.getContent());
+            while (m.find()) {
+                String orgName = m.group(1).trim();
+                organizationRepository.findByName(orgName).ifPresent(org -> {
+                    com.admin.school.models.PostMention mention = new com.admin.school.models.PostMention();
+                    mention.setPost(saved);
+                    mention.setOrganization(org);
+                    postMentionRepository.save(mention);
+                });
+            }
+        }
+        return saved;
     }
 
     @Override
@@ -214,5 +235,49 @@ public class PostsServiceImpl implements PostsService {
         // For now, return false as organizations don't like posts the same way users do
         // This can be enhanced later if needed
         return false;
+    }
+
+    @Override
+    @Transactional
+    public void reportPost(String postId, String reporterUserId, ReportReason reason) {
+        Post post = getPost(postId);
+        User reporter = userRepository.findById(UUID.fromString(reporterUserId))
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        // Prevent self-report
+        if (post.getUser() != null && post.getUser().getId().equals(reporter.getId())) {
+            throw new RuntimeException("Cannot report your own post");
+        }
+
+        // One report per user per post
+        if (postReportRepository.findByPostAndReportedBy(post, reporter).isPresent()) {
+            return; // already reported; idempotent
+        }
+
+        // Create report
+        PostReport report = new PostReport();
+        report.setPost(post);
+        report.setReportedBy(reporter);
+        report.setReason(reason);
+        postReportRepository.save(report);
+
+        // Update counters and status
+        int count = (int) postReportRepository.countByPost(post);
+        post.setReportCount(count);
+        post.setLastReportedAt(new Date());
+
+        // Thresholds (configurable later)
+        int softThreshold = 5;
+        int hardThreshold = 20;
+
+        if (count >= hardThreshold) {
+            post.setModerationStatus(PostModerationStatus.HIDDEN);
+        } else if (count >= softThreshold) {
+            post.setModerationStatus(PostModerationStatus.WARN);
+        } else {
+            post.setModerationStatus(PostModerationStatus.VISIBLE);
+        }
+
+        postsRepository.save(post);
     }
 }

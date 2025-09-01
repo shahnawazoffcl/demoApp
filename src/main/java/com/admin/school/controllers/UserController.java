@@ -14,8 +14,10 @@ import com.admin.school.services.AuthService;
 import com.admin.school.services.NotificationService;
 import com.admin.school.services.PostsService;
 import com.admin.school.services.UserService;
+import com.admin.school.services.FileService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,12 +30,14 @@ public class UserController {
     private final AuthService authService;
     private final UserService userService;
     private final NotificationService notificationService;
+    private final FileService fileService;
 
-    public UserController(PostsService postsService, AuthService authService, UserService userService, NotificationService notificationService) {
+    public UserController(PostsService postsService, AuthService authService, UserService userService, NotificationService notificationService, FileService fileService) {
         this.postsService = postsService;
         this.authService = authService;
         this.userService = userService;
         this.notificationService = notificationService;
+        this.fileService = fileService;
     }
 
     @PostMapping("/complete-profile/{userId}")
@@ -156,7 +160,36 @@ public class UserController {
         return ResponseEntity.ok("Organization unfollowed successfully");
     }
 
+    @PostMapping("/{userId}/profile-picture")
+    public ResponseEntity<UserResponseDTO> uploadProfilePicture(
+            @RequestHeader("token") String token,
+            @PathVariable("userId") String userId,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            authService.validateUser(token, userId);
+            // Save file to uploads/profile-pictures
+            String url = fileService.saveFile(file, "profile-pictures");
+            User updated = userService.updateProfilePicture(userId, url);
+            UserResponseDTO dto = UserControllerUtils.mapUserToUserResponse(updated);
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserResponseDTO> getUserById(@RequestHeader("token") String token, @PathVariable String userId) {
+        try {
+            String viewerId = authService.getUserIdFromToken(token);
+            authService.validateUser(token, viewerId);
+
+            User user = userService.getUserById(userId);
+            UserResponseDTO userResponseDTO = UserControllerUtils.mapUserToUserResponse(user);
+            return ResponseEntity.ok(userResponseDTO);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
 
 }

@@ -1,24 +1,33 @@
 package com.admin.school.controllers;
 
+import com.admin.school.dto.post.PostResponseDTO;
 import com.admin.school.dto.search.OrganizationSearchResult;
 import com.admin.school.dto.post.FeedPostDTO;
 import com.admin.school.dto.organization.OrganizationResponseDTO;
 import com.admin.school.dto.organization.OrganizationProfileDTO;
 import com.admin.school.models.Organization;
+import com.admin.school.models.Post;
+import com.admin.school.models.PostMention;
 import com.admin.school.models.User;
 import com.admin.school.repository.OrganizationRepository;
+import com.admin.school.repository.PostMentionRepository;
+import com.admin.school.repository.PostsRepository;
 import com.admin.school.services.AuthService;
 import com.admin.school.services.UserSchoolRelationshipService;
 import com.admin.school.services.PostsService;
 import com.admin.school.services.OrganizationService;
+import com.admin.school.services.UserService;
 import com.admin.school.controllers.utils.PostControllerUtils;
 import com.admin.school.controllers.utils.OrganizationControllerUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import com.admin.school.models.UserSchoolRelationship;
 
 @RestController
 @RequestMapping("/organizations")
@@ -28,12 +37,18 @@ public class OrganizationController {
     private final AuthService authService;
     private final PostsService postsService;
     private final OrganizationService organizationService;
+    private final PostMentionRepository postMentionRepository;
+    private final PostsRepository postsRepository;
+    private final UserService userService;
 
-    public OrganizationController(UserSchoolRelationshipService userSchoolRelationshipService, AuthService authService, PostsService postsService, OrganizationService organizationService) {
+    public OrganizationController(UserSchoolRelationshipService userSchoolRelationshipService, AuthService authService, PostsService postsService, OrganizationService organizationService, PostMentionRepository postMentionRepository, PostsRepository postsRepository, UserService userService) {
         this.userSchoolRelationshipService = userSchoolRelationshipService;
         this.authService = authService;
         this.postsService = postsService;
         this.organizationService = organizationService;
+        this.postMentionRepository = postMentionRepository;
+        this.postsRepository = postsRepository;
+        this.userService = userService;
     }
 
     // Get all countries for dropdown
@@ -154,6 +169,82 @@ public class OrganizationController {
         } catch (Exception e) {
             e.printStackTrace(); // Add logging to see the actual error
             return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @GetMapping("/{orgId}/mentions")
+    public ResponseEntity<List<PostResponseDTO>> getMentions(
+            @RequestHeader("token") String token,
+            @PathVariable("orgId") String orgId) {
+        try {
+            String userId = authService.getUserIdFromToken(token);
+            authService.validateUser(token, userId);
+            UUID oid = UUID.fromString(orgId);
+            Organization org = organizationService.getOrganizationById(oid);
+            List<PostMention> mentions = postMentionRepository.findByOrganizationOrderByCreatedAtDesc(org);
+            List<PostResponseDTO> dtos = new ArrayList<>();
+            for (PostMention m : mentions) {
+                Post p = m.getPost();
+                dtos.add(PostControllerUtils.mapPostToPostResponseDTO(p, userId, userService));
+            }
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/{orgId}/own-posts")
+    public ResponseEntity<List<PostResponseDTO>> getOwnPosts(
+            @RequestHeader("token") String token,
+            @PathVariable("orgId") String orgId) {
+        try {
+            String userId = authService.getUserIdFromToken(token);
+            authService.validateUser(token, userId);
+            UUID oid = UUID.fromString(orgId);
+            Organization org = organizationService.getOrganizationById(oid);
+            List<Post> ownPosts = postsRepository.findByOrganizationOrderByCreatedAtDesc(org);
+            List<PostResponseDTO> dtos = new ArrayList<>();
+            for (Post p : ownPosts) {
+                dtos.add(PostControllerUtils.mapPostToPostResponseDTO(p, userId, userService));
+            }
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/{orgId}/employee-posts")
+    public ResponseEntity<List<PostResponseDTO>> getEmployeePosts(
+            @RequestHeader("token") String token,
+            @PathVariable("orgId") String orgId) {
+        try {
+            String userId = authService.getUserIdFromToken(token);
+            authService.validateUser(token, userId);
+            UUID oid = UUID.fromString(orgId);
+            Organization org = organizationService.getOrganizationById(oid);
+            List<com.admin.school.dto.user.UserSchoolRelationshipDTO> relationships = userSchoolRelationshipService.getUserRelationships(userId);
+            List<Post> employeePosts = new ArrayList<>();
+            
+            // Get posts from users who have active relationships with this org
+            for (com.admin.school.dto.user.UserSchoolRelationshipDTO rel : relationships) {
+                if (rel.getSchoolId().equals(orgId) && rel.getStatus().equals("ACTIVE")) {
+                    // Find user by ID from the relationship
+                    User user = userService.getUserById(rel.getUserId());
+                    List<Post> userPosts = postsRepository.findByUserOrderByCreatedAtDesc(user);
+                    employeePosts.addAll(userPosts);
+                }
+            }
+            
+            // Sort by creation date (newest first)
+            employeePosts.sort((p1, p2) -> p2.getCreatedAt().compareTo(p1.getCreatedAt()));
+            
+            List<PostResponseDTO> dtos = new ArrayList<>();
+            for (Post p : employeePosts) {
+                dtos.add(PostControllerUtils.mapPostToPostResponseDTO(p, userId, userService));
+            }
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 
