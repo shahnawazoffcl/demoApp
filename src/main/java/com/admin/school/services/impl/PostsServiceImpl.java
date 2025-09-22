@@ -189,6 +189,10 @@ public class PostsServiceImpl implements PostsService {
         // 4. Posts from extended network (posts liked by connected users)
         List<Post> networkPosts = postsRepository.findPostsFromOrganizationNetwork(org.getId());
         allPosts.addAll(networkPosts);
+
+        // 5. Posts from extended network (posts liked by connected users)
+        List<Post> mentionPosts = postsRepository.findMentionPostsForOrganization(org.getId());
+        allPosts.addAll(mentionPosts);
         
         // Remove duplicates and sort by creation date
         allPosts = allPosts.stream()

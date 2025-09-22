@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
 
@@ -132,9 +131,14 @@ public interface PostsRepository extends JpaRepository<Post, UUID> {
         ORDER BY relevance_score DESC, p.created_at DESC
         LIMIT 50
     """)
-    List<Post> getFeedSinceDate(@Param("userId") UUID userId, @Param("sinceDate") Timestamp sinceDate);
+    List<Post> getFeedSinceDate(@Param("userId") UUID userId, @Param("sinceDate") java.sql.Timestamp sinceDate);
 
     @Query("""
+        SELECT DISTINCT pm.post FROM PostMention pm 
+        WHERE pm.organization.id = :organizationId
+        ORDER BY pm.post.createdAt DESC
+    """)
+    List<Post> findMentionPostsForOrganization(@Param("organizationId") UUID organizationId);
         SELECT DISTINCT pm.post FROM PostMention pm 
         WHERE pm.organization.id = :organizationId
         ORDER BY pm.post.createdAt DESC

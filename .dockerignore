@@ -1,0 +1,49 @@
+# Ignore build output
+target/
+!target/SchoolVroom-0.0.1-SNAPSHOT.jar
+
+# Ignore IDE files
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# Ignore OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Ignore logs
+*.log
+logs/
+
+# Ignore temporary files
+*.tmp
+*.temp
+*~
+
+# Ignore Git
+.git/
+.gitignore
+
+# Ignore Maven wrapper jar (we copy it explicitly)
+.mvn/wrapper/maven-wrapper.jar
+
+# Ignore Docker files themselves
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.override.yml
+
+# Ignore documentation
+README.md
+*.md
+
+# Ignore test files (optional - comment out if you want to run tests in Docker)
+src/test/ 

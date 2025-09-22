@@ -41,10 +41,6 @@ public class Post extends BaseModel{
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastReportedAt;
 
-    // Trending score (calculated field, not persisted)
-    @Transient
-    private double trendingScore = 0.0;
-
 //    @Enumerated(EnumType.STRING)
 //    private PostMarker marker;
 }
